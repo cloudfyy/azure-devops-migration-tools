@@ -50,13 +50,12 @@ namespace MigrationTools.Host.Commands
             int _exitCode;
             try
             {
-                // KILL if the config is not valid
-                if (!VersionOptions.ConfigureOptions.IsConfigValid(Configuration))
+                if (!VersionOptions.ConfigureOptions.IsConfigSchemaValid(settings.ConfigFile))
                 {
                     CommandActivity.AddEvent(new ActivityEvent("ConfigIsNotValid"));
-                    BoilerplateCli.ConfigIsNotValidMessage(Configuration, Log.Logger);
                     return Task.FromResult(-1);
                 }
+
                 var migrationEngine = _services.GetRequiredService<IMigrationEngine>();
                 migrationEngine.Run();
                 _exitCode = 0;
@@ -66,7 +65,7 @@ namespace MigrationTools.Host.Commands
                 CommandActivity.RecordException(ex);
                 _logger.LogCritical("The config contains some invalid options. Please check the list below and refer to https://devopsmigration.io/ for the specific configration options.");
                 _logger.LogCritical("------------");
-                _logger.LogCritical("OptionName: {OptionsName}", ex.OptionsName);
+                _logger.LogCritical("OptionName: {OptionsName}", GetOptionsName(ex));
                 _logger.LogCritical("The following options are invalid:");
                 foreach (var failure in ex.Failures)
                 {
@@ -89,6 +88,16 @@ namespace MigrationTools.Host.Commands
                 _appLifetime.StopApplication();
             }
             return Task.FromResult(_exitCode);
+        }
+
+        private string GetOptionsName(OptionsValidationException ex)
+        {
+            IOptions options = Activator.CreateInstance(ex.OptionsType) as IOptions;
+            if (options is not null)
+            {
+                return options.ConfigurationMetadata.OptionFor;
+            }
+            return string.Empty;
         }
     }
 }

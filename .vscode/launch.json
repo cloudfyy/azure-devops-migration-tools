@@ -4,6 +4,7 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+        
         {
             "name": "PowerShell Launch Current File",
             "type": "PowerShell",
@@ -15,12 +16,44 @@
             "name": "Full execute",
             "type": "clr",
             "request": "launch",
-            "preLaunchTask": "build full framework",
-            "program": "${workspaceFolder}/src/MigrationTools.ConsoleFull/bin/Debug/net472/migration.exe",
-            "args": ["execute", "-c", "configuration.json"],
-            "cwd": "${workspaceFolder}/src/MigrationTools.ConsoleFull/bin/Debug/net472/",
+            // Use a lightweight build to avoid long pre-launch chains that delay debugger attach
+            "preLaunchTask": "build",
+            // Full .NET Framework exe built for net472 – coreclr debugger can launch it.
+            "program": "${workspaceFolder}/src/MigrationTools.ConsoleFull/bin/Debug/net472/devopsmigration.exe",
+            "args": [
+                "execute",
+                "-c",
+                "configuration-default.json"
+            ],
+            "cwd": "${workspaceFolder}/src/MigrationTools.ConsoleFull/bin/Debug/net472",
+            // Use external terminal so it opens a new window and stays after exit (pause handled in code when env var set)
             "console": "externalTerminal",
-            "stopAtEntry": false
+            "stopAtEntry": false,
+            "justMyCode": true,
+            "env": {
+                "MIGRATIONTOOLS_PAUSE_ON_EXIT": "1"
+            }
+        },
+        {
+            "name": "Attach to .NET Functions",
+            "type": "coreclr",
+            "request": "attach",
+            "processId": "${command:azureFunctions.pickProcess}"
+        },
+        {
+            "name": "Documentation Generator",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build only",
+            "program": "${workspaceFolder}/src/MigrationTools.ConsoleDataGenerator/bin/Debug/net8.0/MigrationTools.ConsoleDataGenerator.dll",
+            "args": [],
+            "cwd": "${workspaceFolder}/src/MigrationTools.ConsoleDataGenerator/bin/Debug/net8.0",
+            "console": "internalConsole",
+            "stopAtEntry": false,
+            "justMyCode": true,
+            "env": {
+                "DOTNET_ENVIRONMENT": "Development"
+            }
         }
     ]
 }
